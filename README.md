@@ -1,13 +1,24 @@
-test-jdo
-========
+MongoDB
+=======
 
-Template project for any user testcase using JDO.
-To create a DataNucleus test simply fork this project, and add/edit as 
-necessary to add your model and persistence commands. The files that you'll likely need to edit are
+Empty query result list iterator bug
+------------------------------------
 
-* <a href="https://github.com/datanucleus/test-jdo/tree/master/src/main/java/mydomain/model">src/main/java/mydomain/model/</a>   **[Put your model classes here]**
-* <a href="https://github.com/datanucleus/test-jdo/blob/master/src/main/resources/META-INF/persistence.xml">src/main/resources/META-INF/persistence.xml</a>   **[Put your datastore details in here]**
-* <a href="https://github.com/datanucleus/test-jdo/blob/master/src/test/java/org/datanucleus/test/SimpleTest.java">src/test/java/org/datanucleus/test/SimpleTest.java</a>   **[Edit this if a single-thread test is required]**
-* <a href="https://github.com/datanucleus/test-jdo/blob/master/src/test/java/org/datanucleus/test/MultithreadTest.java">src/test/java/org/datanucleus/test/MultithreadTest.java</a>   **[Edit this if a multi-thread test is required]**
+Testcase demonstrating a bug with empty query result iterator on MongoDB
+datastore.
 
-To run this, simply type "mvn clean compile test"
+Calling `hasNext()` method on an empty lazy-loaded query result iterator
+returns true while `next()` method returns `null`. Consequently, iterating
+over such a list results in a single `null` element being processed.
+
+The problem will not show up if DataNucleus is forced to evaluate the list
+prior to invoking the iterator, for example by:
+ * calling list `size()` method
+ * calling one of `makeTransient()`, `makePersistent()`, etc PM methods
+
+The reason for this strange behavior is `QueryResultIterator`'s `hasNext()`
+relying on the existence of at least one candidate result, failing to
+check if candidate's cursor contains at least one object.
+However, if one of the above methods is invoked, `LazyLoadQueryResult`
+class ends up calling `getNextObject()` method, removing empty result candidate
+cursors.

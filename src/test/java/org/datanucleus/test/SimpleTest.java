@@ -1,11 +1,20 @@
 package org.datanucleus.test;
 
-import org.junit.*;
-import javax.jdo.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
-import static org.junit.Assert.*;
-import mydomain.model.*;
+import java.util.List;
+
+import javax.jdo.JDOHelper;
+import javax.jdo.PersistenceManager;
+import javax.jdo.PersistenceManagerFactory;
+import javax.jdo.Query;
+import javax.jdo.Transaction;
+
+import mydomain.model.Person;
+
 import org.datanucleus.util.NucleusLogger;
+import org.junit.Test;
 
 public class SimpleTest
 {
@@ -21,7 +30,16 @@ public class SimpleTest
         {
             tx.begin();
 
-            // [INSERT code here to persist object required for testing]
+            Query q = pm.newQuery(Person.class);
+
+            // Ensure result list is empty
+            q.setFilter("name == \"nonexisting\"");
+
+            @SuppressWarnings("unchecked")
+            List<Person> result = (List<Person>) q.execute();
+
+            assertFalse(result.iterator().hasNext());
+
             tx.commit();
         }
         catch (Throwable thr)
